@@ -127,16 +127,25 @@ func Forge() (string, Signature, error) {
 	msg := GetMessageFromString(msgString)
 	// your code here!
 	count := 1
-	for !Verify(msg, pub, sig) { // while our msg can't find a sig that passes verify
-		msgString = "ihssantinawiforgeitinawi@mit.edu" + strconv.Itoa(count)
+	count = 251200000
+	sigs_inferred := 0
+	// for !Verify(msg, pub, sig) { // while our msg can't find a sig that passes verify
+	for sigs_inferred != 256 {
+		sigs_inferred = 0
+		msgString = "forgeitinawi@mit.edu" + strconv.Itoa(count)
+		// msgString = "alampaverylampforgery" + strconv.Itoa(count)
+
 		msg = GetMessageFromString(msgString)
-    if (count%10000 == 1) {
-      fmt.Println(count)
-    }
+		if (count%100000 == 0) {
+			fmt.Println(count)
+		}
 		count += 1
+		var curr_index int
 		for i := 0; i < 32; i++ {
+			should_continue := false
 			for j := 0; j < 8; j++ {
-				curr_index := i*8+(7-j)
+				noIndexMatch := true
+				curr_index = i*8+(7-j)
 				mask := byte(1 << uint(j))
 				// if (int(b) & indices[j]) == 1 {
 				if msg[i]&mask == mask {
@@ -147,6 +156,8 @@ func Forge() (string, Signature, error) {
 						if oldmsg[i]&mask == mask {
 							correctsig := sigslice[mg]
 							sig.Preimage[curr_index] = correctsig.Preimage[curr_index]
+							sigs_inferred += 1
+							noIndexMatch = false
 							break
 						}
 					}
@@ -158,11 +169,22 @@ func Forge() (string, Signature, error) {
 						if oldmsg[i]&mask != mask {
 							correctsig := sigslice[mg]
 							sig.Preimage[curr_index] = correctsig.Preimage[curr_index]
+							sigs_inferred += 1
+							noIndexMatch = false
 							break
 						}
 					}
 				}
+				// look and break
+				if noIndexMatch {
+					should_continue = true
+					continue
+				}
 			}
+			if should_continue {
+				continue
+			}
+			// fmt.Println("sigs inferred:", sigs_inferred, " curr_index", curr_index)
 		}
 	}
 	fmt.Println(msgString)
