@@ -127,13 +127,14 @@ func Forge() (string, Signature, error) {
 	msg := GetMessageFromString(msgString)
 	// your code here!
 	count := 1
-	count = 251200000
+	count = 643563000
+	// count = 44805461
+	// ihssantinawiforgeitinawi@mit.edu643563840
 	sigs_inferred := 0
 	// for !Verify(msg, pub, sig) { // while our msg can't find a sig that passes verify
 	for sigs_inferred != 256 {
 		sigs_inferred = 0
-		msgString = "forgeitinawi@mit.edu" + strconv.Itoa(count)
-		// msgString = "alampaverylampforgery" + strconv.Itoa(count)
+		msgString = "ihssantinawiforgeitinawi@mit.edu" + strconv.Itoa(count)
 
 		msg = GetMessageFromString(msgString)
 		if (count%100000 == 0) {
