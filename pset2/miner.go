@@ -25,20 +25,22 @@ func Mine(original_tip Block, targetBits uint8, stoppedchan chan struct{}, stopc
   cpus := runtime.NumCPU()
   fmt.Printf("This PC has %d CPUs\n", cpus)
   prev_hash := original_tip.Hash()
-  my_name := "Ihssan"
+  my_name := "Ihssanremote"
   my_nonce := "-1"
   new_block_string := fmt.Sprintf("%x %s %s", prev_hash, my_name, my_nonce)
+  running := true
   for j := 0; j < cpus; j++ {
     cpuBlock, err := BlockFromString(new_block_string)
     if err != nil {
       log.Println("encountered error getting block from string")
     }
-    go cpuMine(cpuBlock, targetBits, j)
+    go cpuMine(cpuBlock, targetBits, j, &running)
   }
 
   defer func(){
     // TODO: do teardown work
     log.Println("Exiting... (teardown work)")
+    running = false
   }()
   for {
     select {
@@ -65,6 +67,8 @@ func CheckWork(bl Block, targetBits uint8) bool {
   hash := bl.Hash()
   zero_byte := byte(0)
   for i, hashbyte := range hash {
+    // another way to do this is to mask the first 64 bits and do a comparison
+    //  with target bits.
     if i <= 3 {
       if hashbyte > zero_byte {
         return false
@@ -82,22 +86,24 @@ func CheckWork(bl Block, targetBits uint8) bool {
   return true
 }
 
-func cpuMine(cpuBlock Block, targetBits uint8, cpuId int) {
-  count := 300000000
-  cpuBlock.Nonce = "0"
-  printMod := 100000
-  for !CheckWork(cpuBlock, targetBits) {
-    cpuBlock.Nonce = fmt.Sprintf("%d", count)
-    if (count % printMod == 0) {
-      fmt.Printf("Did %d tries from cpu: %d\n", count, cpuId)
-      fmt.Printf("FYI, the previous block hash is %x\n", cpuBlock.PrevHash)
+func cpuMine(cpuBlock Block, targetBits uint8, cpuId int, running *bool) {
+  for *running {
+    count := 300000000
+    cpuBlock.Nonce = "0"
+    printMod := 100000
+    for !CheckWork(cpuBlock, targetBits) {
+      cpuBlock.Nonce = fmt.Sprintf("%d+%d", count, cpuId)
+      if (count % printMod == 0) {
+        fmt.Printf("Did %d tries from cpu: %d\n", count, cpuId)
+        fmt.Printf("FYI, the previous block hash is %x\n", cpuBlock.PrevHash)
+      }
+      count += 1
     }
-    count += 1
-  }
-  log.Println("We have a found a block that works!!!")
-  fmt.Printf("Our block was: " + cpuBlock.ToString() + "\n")
-  err := SendBlockToServer(cpuBlock)
-  if err != nil {
-    log.Println("\n\n\ngot an error when trying to send block to server.\n\n\n")
+    log.Println("We have a found a block that works!!!")
+    fmt.Printf("Our block was: " + cpuBlock.ToString() + "\n")
+    err := SendBlockToServer(cpuBlock)
+    if err != nil {
+      log.Println("\n\n\ngot an error when trying to send block to server.\n\n\n")
+    }
   }
 }
